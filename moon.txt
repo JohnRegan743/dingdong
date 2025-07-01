@@ -136,3 +136,170 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
 -----------------
 labact
 
+<?php
+session_start();
+
+// Database users array
+$users = array(
+    'admin' => array('password' => 'admin123', 'role' => 'Admin'),
+    'editor' => array('password' => 'editor123', 'role' => 'Editor'),
+    'viewer' => array('password' => 'viewer123', 'role' => 'Viewer')
+);
+
+// Define upload directory
+$uploadDir = 'uploads/';
+
+// Check if uploads directory exists, create if it doesn't
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
+}
+
+// Handle login form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['username']) && isset($_POST['password'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    
+    if (isset($users[$username]) && $users[$username]['password'] == $password) {
+        $_SESSION['username'] = $username;
+        $_SESSION['role'] = $users[$username]['role'];
+    } else {
+        $errorMessage = "Invalid credentials. Login is required.";
+    }
+}
+
+// Handle file upload
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file']) && isset($_SESSION['username'])) {
+    $userRole = $_SESSION['role'];
+    if ($userRole == 'Admin' || $userRole == 'Editor') {
+        $allowedTypes = array('docx', 'MP4', 'MP3');
+        $uploadedFile = $_FILES['file'];
+        $fileName = $uploadedFile['name'];
+        $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
+        
+        // Verify file types and extensions (mime and extension checking)
+        $allowedMimes = array('application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'video/mp4', 'audio/mpeg');
+        $fileMime = $uploadedFile['type'];
+        
+        if (in_array($fileExtension, $allowedTypes) && in_array($fileMime, $allowedMimes)) {
+            $targetPath = $uploadDir . $fileName;
+            if (move_uploaded_file($uploadedFile['tmp_name'], $targetPath)) {
+                $uploadMessage = "File uploaded successfully.";
+            } else {
+                $uploadError = "Failed to upload file.";
+            }
+        } else {
+            $uploadError = "Invalid file type. Only docx, MP4, MP3 files are allowed.";
+        }
+    } else {
+        $uploadError = "You do not have permission to upload files.";
+    }
+}
+
+// Handle file deletion
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['file_to_delete']) && isset($_SESSION['username'])) {
+    $userRole = $_SESSION['role'];
+    if ($userRole == 'Admin' || $userRole == 'Editor') {
+        $fileToDelete = $_POST['file_to_delete'];
+        $filePath = $uploadDir . $fileToDelete;
+        if (file_exists($filePath)) {
+            if (unlink($filePath)) {
+                $deleteMessage = "File deleted successfully.";
+            } else {
+                $deleteError = "Failed to delete file.";
+            }
+        } else {
+            $deleteError = "File does not exist.";
+        }
+    } else {
+        $deleteError = "You do not have permission to delete files.";
+    }
+}
+
+// Handle logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: what3.php");
+    exit();
+}
+
+// Get list of uploaded files
+function listUploadedFiles($directory) {
+    $files = array();
+    if (is_dir($directory)) {
+        $fileList = scandir($directory);
+        foreach ($fileList as $file) {
+            if ($file != '.' && $file != '..') {
+                $files[] = $file;
+            }
+        }
+    }
+    return $files;
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multimedia Archive</title>
+</head>
+<body>
+    <?php if (!isset($_SESSION['username'])): ?>
+        <?php if (isset($errorMessage)): ?>
+            <p style="color: red;"><?php echo $errorMessage; ?></p>
+        <?php endif; ?>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="submit" value="Login">
+        </form>
+    <?php else: ?>
+        <h2><?php echo "Welcome " . $_SESSION['username'] . " (" . $_SESSION['role'] . ")"; ?></h2>
+        
+        <?php if ($_SESSION['role'] == 'Admin' || $_SESSION['role'] == 'Editor'): ?>
+            <h3>Upload Files</h3>
+            <?php if (isset($uploadMessage)): ?>
+                <p style="color: green;"><?php echo $uploadMessage; ?></p>
+            <?php endif; ?>
+            <?php if (isset($uploadError)): ?>
+                <p style="color: red;"><?php echo $uploadError; ?></p>
+            <?php endif; ?>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" required>
+                <input type="submit" value="Upload">
+            </form>
+        <?php endif; ?>
+        
+        <h3>Uploaded Files</h3>
+        <?php if (isset($deleteMessage)): ?>
+            <p style="color: green;"><?php echo $deleteMessage; ?></p>
+        <?php endif; ?>
+        <?php if (isset($deleteError)): ?>
+            <p style="color: red;"><?php echo $deleteError; ?></p>
+        <?php endif; ?>
+        
+        <table border="1">
+            <tr>
+                <th>File Name</th>
+                <th>Action</th>
+            </tr>
+            <?php 
+            $files = listUploadedFiles($uploadDir);
+            foreach ($files as $file): 
+            ?>
+            <tr>
+                <td><?php echo $file; ?></td>
+                <td>
+                    <?php if ($_SESSION['role'] == 'Admin' || $_SESSION['role'] == 'Editor'): ?>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="file_to_delete" value="<?php echo $file; ?>">
+                            <input type="submit" value="Delete">
+                        </form>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+        
+        <p><a href="?logout=1">Logout</a></p>
+    <?php endif; ?>
+</body>
+</html>
