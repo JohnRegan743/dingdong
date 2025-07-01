@@ -1,0 +1,138 @@
+<?php
+
+$folder_name = "Test_Folder";
+if (!is_dir($folder_name)) {
+    mkdir($folder_name);
+    echo '1. Folder ' . $folder_name . ' created! <br><br>';
+} else {
+    echo '1. Folder ' . $folder_name . ' already exists! <br><br>';
+}
+
+$artistList = [
+    "10 Filipino Artists in the Philippines (Showbiz)",
+    "1. Vice Ganda",
+    "2. Coco Martin",
+    "3. Kathryn Bernardo",
+    "4. Daniel Padilla",
+    "5. Marian Rivera",
+    "6. Dingdong Dantes",
+    "7. Liza Soberano",
+    "8. Enrique Gil",
+    "9. Anne Curtis",
+    "10. Alden Richards"
+];
+
+file_put_contents("artists.txt", $artistList[0] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[1] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[2] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[3] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[4] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[5] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[6] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[7] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[8] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[9] . "\n", FILE_APPEND);
+file_put_contents("artists.txt", $artistList[10] . "\n", FILE_APPEND);
+
+echo "2. 'artists.txt' file created!<br><br>";
+
+echo "3. Content of 'artists.txt':<br>";
+echo $artistList[0] . "<br>";
+echo $artistList[1] . "<br>";
+echo $artistList[2] . "<br>";
+echo $artistList[3] . "<br>";
+echo $artistList[4] . "<br>";
+echo $artistList[5] . "<br>";
+echo $artistList[6] . "<br>";
+echo $artistList[7] . "<br>";
+echo $artistList[8] . "<br>";
+echo $artistList[9] . "<br>";
+echo $artistList[10] . "<br>";
+?>
+
+-----------------------------------
+
+sw2
+
+
+
+<?php
+session_start();
+
+$user = "yourname";
+$pass = "BSIT";
+
+if (isset($_GET['logout'])) {
+    session_destroy();
+    setcookie("username", "", time() - 3600);
+    header("Location: student.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $remember = isset($_POST['remember']);
+    
+    if ($username == $user && $password == $pass) {
+        $_SESSION['logged_in'] = true;
+        $_SESSION['username'] = $username;
+        
+        if ($remember) {
+            setcookie("username", $username, time() + (2 * 24 * 60 * 60)); 
+        }
+        
+        header("Location: student.php");
+        exit();
+    } else {
+        $error = "Login failed!";
+    }
+}
+
+$logged_in = false;
+if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+    $logged_in = true;
+} elseif (isset($_COOKIE['username']) && $_COOKIE['username'] == $user) {
+    $_SESSION['logged_in'] = true;
+    $_SESSION['username'] = $_COOKIE['username'];
+    $logged_in = true;
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BSIT Login</title>
+</head>
+<body>
+    <?php if ($logged_in): ?>
+        <a href="?logout=1">Logout</a>
+        <h3>List of Student Names</h3>
+        <p>1. Lance Gabriel</p>
+        <p>2. John Smith</p>
+        <p>3. Maria Santos</p>
+        <p>4. David Johnson</p>
+        <p>5. Anna Cruz</p>
+        <p>6. Michael Brown</p>
+        <p>7. Sarah Davis</p>
+        <p>8. Robert Wilson</p>
+        <p>9. Lisa Garcia</p>
+        <p>10. James Miller</p>
+    <?php else: ?>
+        <?php if (isset($error)): ?>
+            <p><?php echo $error; ?></p>
+        <?php endif; ?>
+        
+        <form method="post">
+            Username: <input type="text" name="username" required><br><br>
+            Password: <input type="password" name="password" required><br><br>
+            <input type="checkbox" name="remember"> Remember Me<br><br>
+            <input type="submit" value="Login">
+        </form>
+    <?php endif; ?>
+</body>
+</html>
+
+-----------------
+labact
+
